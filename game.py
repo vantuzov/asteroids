@@ -34,6 +34,7 @@ class Game:
         self.running = True
         self.started = False
         self.ship: Optional[Ship] = None
+        self.thrusting = False
         self.score = 0
         self.lives = settings.INITIAL_LIVES
 
@@ -121,6 +122,14 @@ class Game:
         self.backdrop_asteroids = moved_asteroids
 
         if self.started and self.ship is not None:
+            keys = pygame.key.get_pressed()
+            turn_direction = (
+                int(keys[pygame.K_RIGHT]) - int(keys[pygame.K_LEFT])
+            )
+            self.ship.rotate(turn_direction, delta_time)
+            self.thrusting = bool(keys[pygame.K_UP])
+            if self.thrusting:
+                self.ship.accelerate(delta_time)
             self.ship.update(delta_time)
 
     def _draw(self) -> None:
@@ -143,7 +152,7 @@ class Game:
         self.screen.blit(score, (settings.SCREEN_WIDTH - score.get_width() - 24, 16))
 
         if self.started and self.ship is not None:
-            self.ship.draw(self.screen)
+            self.ship.draw(self.screen, self.thrusting)
         else:
             self._draw_banner()
 
