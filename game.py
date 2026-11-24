@@ -119,12 +119,7 @@ class Game:
                 and not self.started
                 and self.banner.collidepoint(event.pos)
             ):
-                self.started = True
-                self.ship = Ship()
-                self.asteroids = []
-                self.bullets = []
-                self.explosions = []
-                self.asteroid_timer = settings.ASTEROID_SPAWN_INTERVAL
+                self._start_game()
             elif (
                 event.type == pygame.KEYDOWN
                 and event.key == pygame.K_SPACE
@@ -132,6 +127,20 @@ class Game:
                 and self.ship is not None
             ):
                 self.bullets.append(Bullet(self.ship.position, self.ship.angle))
+
+    def _start_game(self) -> None:
+        """Начинает игру или обнуляет результаты после поражения."""
+        if self.game_over:
+            self.score = 0
+            self.lives = settings.INITIAL_LIVES
+            self.game_over = False
+
+        self.started = True
+        self.ship = Ship()
+        self.asteroids = []
+        self.bullets = []
+        self.explosions = []
+        self.asteroid_timer = settings.ASTEROID_SPAWN_INTERVAL
 
     def _update(self, delta_time: float) -> None:
         """Перемещает динамический фон и обновляет корабль."""
@@ -284,9 +293,22 @@ class Game:
         self.screen.blit(panel, self.banner.topleft)
         pygame.draw.rect(self.screen, settings.ACCENT_COLOR, self.banner, 3)
 
-        title = self.title_font.render("АСТЕРОИДЫ", True, settings.TEXT_COLOR)
+        if self.game_over:
+            title = self.button_font.render(
+                "ИГРА ОКОНЧЕНА",
+                True,
+                settings.TEXT_COLOR,
+            )
+            prompt_text = "ЩЁЛКНИ, ЧТОБЫ НАЧАТЬ ЗАНОВО"
+        else:
+            title = self.title_font.render(
+                "АСТЕРОИДЫ",
+                True,
+                settings.TEXT_COLOR,
+            )
+            prompt_text = "ЩЁЛКНИ, ЧТОБЫ НАЧАТЬ"
         prompt = self.button_font.render(
-            "ЩЁЛКНИ, ЧТОБЫ НАЧАТЬ",
+            prompt_text,
             True,
             settings.TEXT_COLOR,
         )
