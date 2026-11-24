@@ -6,7 +6,13 @@ from typing import Optional
 import pygame
 
 import settings
-from entities import Asteroid, Bullet, Ship
+from entities import (
+    Asteroid,
+    Bullet,
+    Explosion,
+    Ship,
+    circles_collide,
+)
 
 
 class Game:
@@ -37,7 +43,9 @@ class Game:
         self.thrusting = False
         self.asteroids: list[Asteroid] = []
         self.bullets: list[Bullet] = []
+        self.explosions: list[Explosion] = []
         self.asteroid_timer = 0.0
+        self.game_over = False
         self.score = 0
         self.lives = settings.INITIAL_LIVES
 
@@ -115,6 +123,7 @@ class Game:
                 self.ship = Ship()
                 self.asteroids = []
                 self.bullets = []
+                self.explosions = []
                 self.asteroid_timer = settings.ASTEROID_SPAWN_INTERVAL
             elif (
                 event.type == pygame.KEYDOWN
@@ -161,6 +170,81 @@ class Game:
             self.bullets = [
                 bullet for bullet in self.bullets if bullet.lifetime > 0
             ]
+            for explosion in self.explosions:
+                explosion.update(delta_time)
+            self.explosions = [
+                explosion
+                for explosion in self.explosions
+                if not explosion.finished
+            ]
+            self._resolve_collisions()
+
+    def _resolve_collisions(self) -> None:
+        """Обрабатывает попадания ракет и столкновения с кораблём."""
+        surviving_asteroids = list(self.asteroids)
+        surviving_bullets = []
+        for bullet in self.bullets:
+            hit_asteroid = next(
+                (
+                    asteroid
+                    for asteroid in surviving_asteroids
+                    if circles_collide(
+                        bullet.position,
+                        bullet.radius,
+                        asteroid.position,
+                        asteroid.radius,
+                    )
+                ),
+                None,
+            )
+            if hit_asteroid is None:
+                surviving_bullets.append(bullet)
+                continue
+
+            surviving_asteroids.remove(hit_asteroid)
+            self.explosions.append(
+                Explosion(hit_asteroid.position, hit_asteroid.radius)
+            )
+            self.score += 1
+
+        self.asteroids = surviving_asteroids
+        self.bullets = surviving_bullets
+
+        if self.ship is None or self.ship.invulnerability > 0:
+            return
+
+        hit_asteroid = next(
+            (
+                asteroid
+                for asteroid in self.asteroids
+                if circles_collide(
+                    self.ship.position,
+                    self.ship.radius,
+                    asteroid.position,
+                    asteroid.radius,
+                )
+            ),
+            None,
+        )
+        if hit_asteroid is None:
+            return
+
+        self.asteroids.remove(hit_asteroid)
+        self.explosions.append(
+            Explosion(hit_asteroid.position, hit_asteroid.radius)
+        )
+        self.lives -= 1
+        if self.lives == 0:
+            self.game_over = True
+            self.started = False
+            self.ship = None
+            self.asteroids.clear()
+            self.bullets.clear()
+            self.explosions.clear()
+            return
+
+        self.ship = Ship()
+        self.ship.invulnerability = settings.SHIP_INVULNERABILITY
 
     def _draw(self) -> None:
         """Рисует фон, показатели, корабль и заставку."""
@@ -185,6 +269,8 @@ class Game:
             asteroid.draw(self.screen)
         for bullet in self.bullets:
             bullet.draw(self.screen)
+        for explosion in self.explosions:
+            explosion.draw(self.screen)
 
         if self.started and self.ship is not None:
             self.ship.draw(self.screen, self.thrusting)

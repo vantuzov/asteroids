@@ -15,6 +15,21 @@ def wrap_position(position: pygame.Vector2) -> None:
     position.y %= settings.SCREEN_HEIGHT
 
 
+def circles_collide(
+    first_position: pygame.Vector2,
+    first_radius: int,
+    second_position: pygame.Vector2,
+    second_radius: int,
+) -> bool:
+    """Проверяет столкновение кругов с учётом перехода через край поля."""
+    dx = abs(first_position.x - second_position.x)
+    dy = abs(first_position.y - second_position.y)
+    dx = min(dx, settings.SCREEN_WIDTH - dx)
+    dy = min(dy, settings.SCREEN_HEIGHT - dy)
+    radius = first_radius + second_radius
+    return dx * dx + dy * dy <= radius * radius
+
+
 class Ship:
     """Корабль игрока с инерцией и управляемым ускорением."""
 
