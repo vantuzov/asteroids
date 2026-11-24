@@ -6,7 +6,7 @@ from typing import Optional
 import pygame
 
 import settings
-from entities import Ship
+from entities import Asteroid, Bullet, Ship
 
 
 class Game:
@@ -35,6 +35,9 @@ class Game:
         self.started = False
         self.ship: Optional[Ship] = None
         self.thrusting = False
+        self.asteroids: list[Asteroid] = []
+        self.bullets: list[Bullet] = []
+        self.asteroid_timer = 0.0
         self.score = 0
         self.lives = settings.INITIAL_LIVES
 
@@ -110,6 +113,16 @@ class Game:
             ):
                 self.started = True
                 self.ship = Ship()
+                self.asteroids = []
+                self.bullets = []
+                self.asteroid_timer = settings.ASTEROID_SPAWN_INTERVAL
+            elif (
+                event.type == pygame.KEYDOWN
+                and event.key == pygame.K_SPACE
+                and self.started
+                and self.ship is not None
+            ):
+                self.bullets.append(Bullet(self.ship.position, self.ship.angle))
 
     def _update(self, delta_time: float) -> None:
         """Перемещает динамический фон и обновляет корабль."""
@@ -132,6 +145,23 @@ class Game:
                 self.ship.accelerate(delta_time)
             self.ship.update(delta_time)
 
+            self.asteroid_timer += delta_time
+            if self.asteroid_timer >= settings.ASTEROID_SPAWN_INTERVAL:
+                self.asteroid_timer -= settings.ASTEROID_SPAWN_INTERVAL
+                position = (
+                    random.randrange(settings.SCREEN_WIDTH),
+                    random.randrange(settings.SCREEN_HEIGHT),
+                )
+                self.asteroids.append(Asteroid(position))
+
+            for asteroid in self.asteroids:
+                asteroid.update(delta_time)
+            for bullet in self.bullets:
+                bullet.update(delta_time)
+            self.bullets = [
+                bullet for bullet in self.bullets if bullet.lifetime > 0
+            ]
+
     def _draw(self) -> None:
         """Рисует фон, показатели, корабль и заставку."""
         self.screen.blit(self.background, (0, 0))
@@ -150,6 +180,11 @@ class Game:
         )
         self.screen.blit(lives, (24, 16))
         self.screen.blit(score, (settings.SCREEN_WIDTH - score.get_width() - 24, 16))
+
+        for asteroid in self.asteroids:
+            asteroid.draw(self.screen)
+        for bullet in self.bullets:
+            bullet.draw(self.screen)
 
         if self.started and self.ship is not None:
             self.ship.draw(self.screen, self.thrusting)
