@@ -1,0 +1,36 @@
+"""Настройки графики, физики и игровой логики."""
+
+# Размеры окна и частота обновления.
+SCREEN_WIDTH = 960
+SCREEN_HEIGHT = 640
+FPS = 60
+
+# Цвета интерфейса и фона в формате RGB.
+BACKGROUND_COLOR = (7, 10, 28)
+STAR_COLOR = (190, 210, 255)
+HUD_COLOR = (55, 255, 75)
+TEXT_COLOR = (235, 240, 255)
+ACCENT_COLOR = (93, 120, 255)
+
+# Начальное состояние и управление кораблём.
+INITIAL_LIVES = 3
+TURN_SPEED = 220
+SHIP_ACCELERATION = 240
+SHIP_FRICTION = 1.6
+SHIP_MAX_SPEED = 300
+SHIP_RADIUS = 17
+SHIP_INVULNERABILITY = 1.2
+
+# Параметры астероидов, выстрелов и взрывов.
+ASTEROID_SPAWN_INTERVAL = 1.25
+ASTEROID_MIN_SPEED = 35
+ASTEROID_MAX_SPEED = 105
+ASTEROID_MIN_RADIUS = 18
+ASTEROID_MAX_RADIUS = 38
+BULLET_SPEED = 480
+BULLET_RADIUS = 3
+BULLET_LIFETIME = min(
+    0.75,
+    min(SCREEN_WIDTH, SCREEN_HEIGHT) * 0.45 / BULLET_SPEED,
+)
+EXPLOSION_DURATION = 0.48
